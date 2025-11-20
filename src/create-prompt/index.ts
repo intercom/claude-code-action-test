@@ -64,6 +64,13 @@ export function buildAllowedToolsString(
     );
   }
 
+  // Add gh CLI commands for PR creation (available in both modes)
+  baseTools.push(
+    "Bash(gh pr create:*)",
+    "Bash(gh pr list:*)",
+    "Bash(gh pr view:*)",
+  );
+
   // Add GitHub Actions MCP tools if enabled
   if (includeActionsTools) {
     baseTools.push(
@@ -627,20 +634,14 @@ ${eventData.eventName === "issue_comment" || eventData.eventName === "pull_reque
       - Mark each subtask as completed as you progress.${getCommitInstructions(eventData, githubData, context, useCommitSigning)}
       ${
         eventData.claudeBranch
-          ? `- Provide a URL to create a PR manually in this format:
-        [Create a PR](${GITHUB_SERVER_URL}/${context.repository}/compare/${eventData.baseBranch}...<branch-name>?quick_pull=1&title=<url-encoded-title>&body=<url-encoded-body>)
-        - IMPORTANT: Use THREE dots (...) between branch names, not two (..)
-          Example: ${GITHUB_SERVER_URL}/${context.repository}/compare/main...feature-branch (correct)
-          NOT: ${GITHUB_SERVER_URL}/${context.repository}/compare/main..feature-branch (incorrect)
-        - IMPORTANT: Ensure all URL parameters are properly encoded - spaces should be encoded as %20, not left as spaces
-          Example: Instead of "fix: update welcome message", use "fix%3A%20update%20welcome%20message"
-        - The target-branch should be '${eventData.baseBranch}'.
-        - The branch-name is the current branch: ${eventData.claudeBranch}
-        - The body should include:
+          ? `- After pushing your changes, ALWAYS create a pull request using gh CLI:
+        \`gh pr create --base ${eventData.baseBranch} --head ${eventData.claudeBranch} --title "<descriptive-title>" --body "<description>"\`
+        - The PR body should include:
           - A clear description of the changes
-          - Reference to the original ${eventData.isPR ? "PR" : "issue"}
+          - Reference to the original ${eventData.isPR ? "PR" : "issue"} (use "Closes #<number>" or "Relates to #<number>")
           - The signature: "Generated with [Claude Code](https://claude.ai/code)"
-        - Just include the markdown link with text "Create a PR" - do not add explanatory text before it like "You can create a PR using this link"`
+        - IMPORTANT: After creating the PR, update your comment to include the PR link
+        - If you create multiple PRs (for different sets of changes), include links to all of them in your comment`
           : ""
       }
 
@@ -658,7 +659,7 @@ ${eventData.eventName === "issue_comment" || eventData.eventName === "pull_reque
    - When all todos are completed, remove the spinner and add a brief summary of what was accomplished, and what was not done.
    - Note: If you see previous Claude comments with headers like "**Claude finished @user's task**" followed by "---", do not include this in your comment. The system adds this automatically.
    - If you changed any files locally, you must update them in the remote branch via ${useCommitSigning ? "mcp__github_file_ops__commit_files" : "git commands (add, commit, push)"} before saying that you're done.
-   ${eventData.claudeBranch ? `- If you created anything in your branch, your comment must include the PR URL with prefilled title and body mentioned above.` : ""}
+   ${eventData.claudeBranch ? `- If you created anything in your branch, your comment MUST include links to all PRs you created using gh pr create.` : ""}
 
 Important Notes:
 - All communication must happen through GitHub PR comments.

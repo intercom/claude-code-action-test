@@ -154,6 +154,13 @@ export const tagMode: Mode = {
       );
     }
 
+    // Add gh CLI commands for PR creation
+    tagModeTools.push(
+      "Bash(gh pr create:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+    );
+
     // Get our GitHub MCP servers configuration
     const ourMcpConfig = await prepareMcpConfig({
       githubToken,

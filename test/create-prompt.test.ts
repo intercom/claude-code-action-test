@@ -254,9 +254,9 @@ describe("generatePrompt", () => {
       "<trigger_context>new issue with '@claude' in body</trigger_context>",
     );
     expect(prompt).toContain(
-      "[Create a PR](https://github.com/owner/repo/compare/main",
+      "gh pr create --base main --head claude/issue-789-20240101-1200",
     );
-    expect(prompt).toContain("The target-branch should be 'main'");
+    expect(prompt).toContain("After creating the PR, update your comment to include the PR link");
   });
 
   test("should generate prompt for issue assigned event", async () => {
@@ -287,7 +287,7 @@ describe("generatePrompt", () => {
       "<trigger_context>issue assigned to 'claude-bot'</trigger_context>",
     );
     expect(prompt).toContain(
-      "[Create a PR](https://github.com/owner/repo/compare/develop",
+      "gh pr create --base develop --head claude/issue-999-20240101-1200",
     );
   });
 
@@ -319,7 +319,7 @@ describe("generatePrompt", () => {
       "<trigger_context>issue labeled with 'claude-task'</trigger_context>",
     );
     expect(prompt).toContain(
-      "[Create a PR](https://github.com/owner/repo/compare/main",
+      "gh pr create --base main --head claude/issue-888-20240101-1200",
     );
   });
 
@@ -640,9 +640,9 @@ describe("generatePrompt", () => {
     expect(prompt).toContain(
       "IMPORTANT: You are already on the correct branch (claude/issue-789-20240101-1200)",
     );
-    expect(prompt).toContain("Create a PR](https://github.com/");
+    expect(prompt).toContain("gh pr create");
     expect(prompt).toContain(
-      "If you created anything in your branch, your comment must include the PR URL",
+      "If you created anything in your branch, your comment MUST include links to all PRs you created using gh pr create",
     );
 
     // Should NOT contain PR-specific instructions
@@ -717,14 +717,11 @@ describe("generatePrompt", () => {
       "You are already on the correct branch (claude/pr-456-20240101-1200)",
     );
     expect(prompt).toContain(
-      "Create a PR](https://github.com/owner/repo/compare/main",
-    );
-    expect(prompt).toContain(
-      "The branch-name is the current branch: claude/pr-456-20240101-1200",
+      "gh pr create --base main --head claude/pr-456-20240101-1200",
     );
     expect(prompt).toContain("Reference to the original PR");
     expect(prompt).toContain(
-      "If you created anything in your branch, your comment must include the PR URL",
+      "If you created anything in your branch, your comment MUST include links to all PRs you created using gh pr create",
     );
 
     // Should NOT contain open PR instructions
@@ -762,10 +759,10 @@ describe("generatePrompt", () => {
     );
 
     // Should NOT contain new branch instructions
-    expect(prompt).not.toContain("Create a PR](https://github.com/");
+    expect(prompt).not.toContain("gh pr create");
     expect(prompt).not.toContain("You are already on the correct branch");
     expect(prompt).not.toContain(
-      "If you created anything in your branch, your comment must include the PR URL",
+      "If you created anything in your branch, your comment MUST include links to all PRs you created using gh pr create",
     );
   });
 
@@ -796,7 +793,7 @@ describe("generatePrompt", () => {
       "You are already on the correct branch (claude/pr-789-20240101-1230)",
     );
     expect(prompt).toContain(
-      "Create a PR](https://github.com/owner/repo/compare/develop",
+      "gh pr create --base develop --head claude/pr-789-20240101-1230",
     );
     expect(prompt).toContain("Reference to the original PR");
   });
@@ -828,10 +825,10 @@ describe("generatePrompt", () => {
     expect(prompt).toContain(
       "You are already on the correct branch (claude/pr-999-20240101-1400)",
     );
-    expect(prompt).toContain("Create a PR](https://github.com/");
+    expect(prompt).toContain("gh pr create");
     expect(prompt).toContain("Reference to the original PR");
     expect(prompt).toContain(
-      "If you created anything in your branch, your comment must include the PR URL",
+      "If you created anything in your branch, your comment MUST include links to all PRs you created using gh pr create",
     );
   });
 
@@ -861,7 +858,7 @@ describe("generatePrompt", () => {
     expect(prompt).toContain(
       "You are already on the correct branch (claude/pr-555-20240101-1500)",
     );
-    expect(prompt).toContain("Create a PR](https://github.com/");
+    expect(prompt).toContain("gh pr create");
     expect(prompt).toContain("Reference to the original PR");
   });
 
@@ -1037,6 +1034,11 @@ describe("buildAllowedToolsString", () => {
     expect(result).toContain("Bash(git push:*)");
     expect(result).toContain("mcp__github_comment__update_claude_comment");
 
+    // Should have gh CLI commands for PR creation
+    expect(result).toContain("Bash(gh pr create:*)");
+    expect(result).toContain("Bash(gh pr list:*)");
+    expect(result).toContain("Bash(gh pr view:*)");
+
     // Should not have commit signing tools
     expect(result).not.toContain("mcp__github_file_ops__commit_files");
     expect(result).not.toContain("mcp__github_file_ops__delete_files");
@@ -1057,6 +1059,11 @@ describe("buildAllowedToolsString", () => {
     expect(result).toContain("Bash(git add:*)");
     expect(result).toContain("Bash(git commit:*)");
     expect(result).toContain("mcp__github_comment__update_claude_comment");
+
+    // Should have gh CLI commands for PR creation
+    expect(result).toContain("Bash(gh pr create:*)");
+    expect(result).toContain("Bash(gh pr list:*)");
+    expect(result).toContain("Bash(gh pr view:*)");
 
     // Should not have commit signing tools
     expect(result).not.toContain("mcp__github_file_ops__commit_files");
@@ -1131,8 +1138,14 @@ describe("buildAllowedToolsString", () => {
     // Comment tool should always be from github_comment server
     expect(result).toContain("mcp__github_comment__update_claude_comment");
 
-    // Bash should NOT be included when using commit signing (except in comment tool name)
-    expect(result).not.toContain("Bash(");
+    // Should have gh CLI commands for PR creation (available in both modes)
+    expect(result).toContain("Bash(gh pr create:*)");
+    expect(result).toContain("Bash(gh pr list:*)");
+    expect(result).toContain("Bash(gh pr view:*)");
+
+    // Bash git commands should NOT be included when using commit signing
+    expect(result).not.toContain("Bash(git add:*)");
+    expect(result).not.toContain("Bash(git commit:*)");
   });
 
   test("should include specific Bash git commands when useCommitSigning is false", async () => {
@@ -1154,6 +1167,11 @@ describe("buildAllowedToolsString", () => {
     expect(result).toContain("Bash(git diff:*)");
     expect(result).toContain("Bash(git log:*)");
     expect(result).toContain("Bash(git rm:*)");
+
+    // Should have gh CLI commands for PR creation
+    expect(result).toContain("Bash(gh pr create:*)");
+    expect(result).toContain("Bash(gh pr list:*)");
+    expect(result).toContain("Bash(gh pr view:*)");
 
     // Comment tool from minimal server should be included
     expect(result).toContain("mcp__github_comment__update_claude_comment");
