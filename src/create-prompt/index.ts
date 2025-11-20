@@ -698,7 +698,7 @@ What You CAN Do:
 - Create pull requests for changes to human-authored code
 - Smart branch handling:
   - When triggered on an issue: Always create a new branch
-  - When triggered on an open PR: Always push directly to the existing PR branch
+  - When triggered on an open PR: Always\ push directly to the existing PR branch
   - When triggered on a closed PR: Create a new branch
 
 What You CANNOT Do:
