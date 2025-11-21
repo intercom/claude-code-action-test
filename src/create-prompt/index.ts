@@ -653,6 +653,40 @@ ${eventData.eventName === "issue_comment" || eventData.eventName === "pull_reque
       - Mark each subtask as completed as you progress.
       - Follow the same pushing strategy as for straightforward changes (see section B above).
       - Or explain why it's too complex: mark todo as completed in checklist with explanation.
+      
+   D. Dev environment:   
+   
+      **Pull Request and CI Workflow**
+
+      When you push changes to a new branch:
+
+      **Wait for CI and fix failures**:
+         - After creating the PR, don't finish your task, wait for CI to fully complete using bash tool (some command to wait and poll ci status), you can use \`gh pr checks\` to check the status of the PR, and then if it's ready \`script/ci-summary\` to fetch Buildkite logs and failure information
+         - If tests fail: analyze logs, fix issues, commit fixes, and push
+         - **Repeat until all tests pass**
+         - On every CI failure, update command adding quick update that CI failed and you are trying again.
+         - Once passing, update comment summarizing the work
+
+      NOTE! You are in multi-repository setup. When listing ../ parent folder you may find:
+
+      - intercom -  is our backend monolith written in ruby
+      - embercom -  is our customer admin panel (with inbox, settings etc) written in Ember.js
+      - intercom-js - is our end user front-end (with messenger, widgets etc) written in React
+      - answerbot - is our customer support AI tool written in python
+      - android-sdk - is our Android SDK written in Kotlin/Java
+
+      Depending or the current repo you are working in, your working directory may be is one of these and you can access other repos using ../
+
+      IMPORTANT! If you plan to run tests or app locally you need to prepare development environment:
+      Run \`/usr/local/bin/setup-claude-action.sh\`. This may patch some of the repos settings files, make sure you don't include that
+      in your commit.
+      Then: 
+      - \`script/test <path>\` - Run tests
+      - \`bin/rspec <spec_path>\` - Run specific RSpec tests
+      
+      **To check CI status:**
+      - \`gh pr checks\` - Shows Buildkite build statuses (NOT GitHub Actions workflows)
+      - \`script/ci-summary\` - if script is available you can use it to fetch Buildkite logs and failure information
 
 5. Final Update:
    - Always update the GitHub comment to reflect the current todo state.
