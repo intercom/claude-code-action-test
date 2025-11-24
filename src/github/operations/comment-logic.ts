@@ -153,6 +153,13 @@ export function updateCommentBody(input: CommentUpdateInput): string {
 
   // Add the cleaned body content
   newBody += bodyContent;
+  // add feedback section
+  newBody += `\n\n**Feedback:**
+  
+  - [ ] It was good, I'm going to merge it as is / after AI followup
+  - [ ] It was OK, I'm going to rework and merge
+  - [ ] It was crap, I'm going to abandon this and start ove
+  `;
 
   return newBody.trim();
 }
