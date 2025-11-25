@@ -4,6 +4,7 @@ export type ExecutionDetails = {
   cost_usd?: number;
   duration_ms?: number;
   duration_api_ms?: number;
+  num_turns?: number;
 };
 
 export type CommentUpdateInput = {
@@ -153,9 +154,40 @@ export function updateCommentBody(input: CommentUpdateInput): string {
 
   // Add the cleaned body content
   newBody += bodyContent;
+
+  // Add usage statistics before feedback section if available and not failed
+  if (!actionFailed && executionDetails) {
+    const stats: string[] = [];
+
+    // Add number of turns
+    if (executionDetails.num_turns !== undefined) {
+      stats.push(`${executionDetails.num_turns} turn${executionDetails.num_turns === 1 ? '' : 's'}`);
+    }
+
+    // Add cost
+    if (executionDetails.cost_usd !== undefined) {
+      stats.push(`$${executionDetails.cost_usd.toFixed(4)}`);
+    }
+
+    // Add API duration if available and different from total
+    if (executionDetails.duration_api_ms !== undefined &&
+        executionDetails.duration_ms !== undefined &&
+        executionDetails.duration_api_ms !== executionDetails.duration_ms) {
+      const apiSeconds = Math.round(executionDetails.duration_api_ms / 1000);
+      const apiMinutes = Math.floor(apiSeconds / 60);
+      const apiSecs = apiSeconds % 60;
+      const apiDurationStr = apiMinutes > 0 ? `${apiMinutes}m ${apiSecs}s` : `${apiSecs}s`;
+      stats.push(`${apiDurationStr} API time`);
+    }
+
+    if (stats.length > 0) {
+      newBody += `\n\n---\n\n*${stats.join(' • ')}*`;
+    }
+  }
+
   // add feedback section
   newBody += `\n\n**Feedback:**
-  
+
   - [ ] It was good, I'm going to merge it as is / after AI followup
   - [ ] It was OK, I'm going to rework and merge
   - [ ] It was crap, I'm going to abandon this and start ove

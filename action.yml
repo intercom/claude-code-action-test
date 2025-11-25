@@ -113,6 +113,14 @@ inputs:
     description: "Newline-separated list of Claude Code plugin marketplace Git URLs to install from (e.g., 'https://github.com/user/marketplace1.git\nhttps://github.com/user/marketplace2.git')"
     required: false
     default: ""
+  datadog_api_key:
+    description: "Datadog API key for reporting metrics (optional)"
+    required: false
+    default: ""
+  datadog_site:
+    description: "Datadog site (e.g., datadoghq.com, datadoghq.eu)"
+    required: false
+    default: "datadoghq.com"
 
 outputs:
   execution_file:
@@ -297,6 +305,20 @@ runs:
         USE_STICKY_COMMENT: ${{ inputs.use_sticky_comment }}
         USE_COMMIT_SIGNING: ${{ inputs.use_commit_signing }}
         TRACK_PROGRESS: ${{ inputs.track_progress }}
+
+    - name: Report metrics to Datadog
+      if: steps.prepare.outputs.contains_trigger == 'true' && inputs.datadog_api_key != ''
+      shell: bash
+      run: |
+        bun run ${GITHUB_ACTION_PATH}/src/entrypoints/report-metrics.ts
+      env:
+        DD_API_KEY: ${{ inputs.datadog_api_key }}
+        DD_SITE: ${{ inputs.datadog_site }}
+        OUTPUT_FILE: ${{ steps.claude-code.outputs.execution_file || '' }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_WORKFLOW: ${{ github.workflow }}
 
     - name: Display Claude Code Report
       if: steps.prepare.outputs.contains_trigger == 'true' && steps.claude-code.outputs.execution_file != ''
